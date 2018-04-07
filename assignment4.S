@@ -4,6 +4,7 @@
 
 #include "uart_init.s"
 #include "uart_print.s"
+#include "uart_regs.h"
 
 .extern csd_main
 .align 8
@@ -21,98 +22,80 @@ cydf_entry:
 csd_reset:
 
 main:
+	//uart_print // uart 프린트
 
-	uart_init // uart 초기화
+	//uart_init // uart 초기화
 
-	uart_print // uart 프린트
+	ldr r0,	=slcr_UART_RST_CTRL
+	ldr r1, =0x0	//	reset UART
+	str r1, [r0]
+
+	ldr r0, =slcr_UART_CLK_CTRL
+	ldr r1, =0x1402	// divisor = 0x14 (ref clk = 50MHz), srcsel = 0, CLKACT1 = true, CLKACT0 = false
+	str r1, [r0]
+
+	ldr r0, =uart_mode_reg0
+	ldr r1, =0x20
+	str r1, [r0]
+
+	ldr r0, =uart_Control_reg0
+	ldr r1, =0x28	//uart off
+	str r1, [r0]
+
+	ldr r0, =uart_Baud_rate_gen_reg0
+	ldr r1, =0x3e
+	str r1, [r0]
+
+	ldr r0, =uart_Baud_rate_divider_reg0
+	ldr r1, =0x6
+	str r1, [r0]
+
+	ldr r0, =uart_Control_reg0
+	ldr r1, =0x00000117	//uart start
+	str r1, [r0]
+
+	ldr r0, =uart_Modem_ctrl_reg0
+	ldr r1, [r0]
+
+	ldr r0, =uart_Modem_sts_reg0
+	ldr r1, [r0]
+
+
+
+	ldr r0, =uart_TX_RX_FIFO0
+	ldr r1, =uart_Channel_sts_reg0
+
+	// create address for the input number(1~8)
+	mov r5, #0x1000
 
 loop:
 
-	bl csd_main @ r3 = iteration_num
-	mov r5, r3
 
-	ldr r3, =csd_LED_ADDR
+	// check empty: bit#1 is Rx FIFO empty or not (1: empty, 0: not empty)
+	ldr r2, [r1]
+	and r2, r2, #1<<1
+	cmp r2, #0
 
-	mov r4, r5 @ r4 : iteration number which will be decreased by 1
-	mov r2, #1 @ LED0
-	str r2, [r3]
+	// read data and transmit it back to sender, 위의 cmp의 영향을 받음
+	ldreq r3, [r0]
+	streq r3, [r0]
 
-	led0:
-		sub r4, #1
-		cmp r4, #0
-		bne led0
+	//cmp r6, r3 // check wheter the input number has changed. r3-new / r6-old
+	//beq csd_main
 
-	mov r4, r5
-	mov r2, #2 @ LED1
-	str r2, [r3]
+	cmpeq r3, #13   // 0xD (13) is carriage return in ASCII
+	moveq r4, #10 // 0xA (10) is linefeed in ASCII 위의 cmpeq의 영향을 받음
+	streq r4, [r0] //  위의 cmpeq의 영향을 받음
 
-	led1:
-		sub r4, #1
-		cmp r4, #0
-		bne led1
 
-	mov r4, r5
-	mov r2, #4 @ LED2
-	str r2, [r3]
-
-	led2:
-		sub r4, #1
-		cmp r4, #0
-		bne led2
-
-	mov r4, r5
-	mov r2, #8 @ LED3
-	str r2, [r3]
-
-	led3:
-		sub r4, #1
-		cmp r4, #0
-		bne led3
-
-	mov r4, r5
-	mov r2, #16 @ LED4
-	str r2, [r3]
-
-	led4:
-		sub r4, #1
-		cmp r4, #0
-		bne led4
-
-	mov r4, r5
-	mov r2, #32 @ LED5
-	str r2, [r3]
-
-	led5:
-		sub r4, #1
-		cmp r4, #0
-		bne led5
-
-	mov r4, r5
-	mov r2, #64 @ LED6
-	str r2, [r3]
-
-	led6:
-		sub r4, #1
-		cmp r4, #0
-		bne led6
-
-	mov r4, r5
-	mov r2, #128 @ LED7
-	str r2, [r3]
-
-	led7:
-		sub r4, #1
-		cmp r4, #0
-		bne led7
-
-	@mov r4, r5
-	@mov r2, #256 @ LED8
-	@str r2, [r3]
+	cmp r6, r3
+	moveq r6, r3
+	streq r6, [r5]
+	beq csd_main
 
 	b loop
-forever:
-	nop
-	b forever
+
+
 .data
 .align 4
 src:
