@@ -1,6 +1,7 @@
 #define csd_LED_ADDR 0x41200000
 #define csd_SWITCH_ADDR 0x41210000
 #define csd_SWITCH_INPUT 0x1000000
+#define store_input 0x00001000
 
 #include "uart_init.s"
 #include "uart_print.s"
@@ -66,35 +67,38 @@ main:
 	ldr r1, =uart_Channel_sts_reg0
 
 	// create address for the input number(1~8)
-	mov r5, #0x1000
+	mov r7, #0x1000
 
 loop:
-
-
 	// check empty: bit#1 is Rx FIFO empty or not (1: empty, 0: not empty)
 	ldr r2, [r1]
 	and r2, r2, #1<<1
 	cmp r2, #0
 
 	// read data and transmit it back to sender, 위의 cmp의 영향을 받음
-	ldreq r3, [r0]
-	streq r3, [r0]
+	ldreq r8, [r0]
+	streq r8, [r0]
 
 	//cmp r6, r3 // check wheter the input number has changed. r3-new / r6-old
 	//beq csd_main
 
-	cmpeq r3, #13   // 0xD (13) is carriage return in ASCII
+	cmpeq r8, #13   // 0xD (13) is carriage return in ASCII
 	moveq r4, #10 // 0xA (10) is linefeed in ASCII 위의 cmpeq의 영향을 받음
 	streq r4, [r0] //  위의 cmpeq의 영향을 받음
 
+	ldr r5, [r7]
+	cmp r5, r8 // r6 -> r3? ㄴㄴ r3는 루프 한번돌고 오면 전혀 다른 놈되어잇음/ 새로 입력햇을댄 r3랑 비교하는게 맞는데 입력 없을댄 r6랑 비교하는게 맞고...하...
+	beq loop2
 
-	cmp r6, r3
-	moveq r6, r3
-	streq r6, [r5]
-	beq csd_main
+	mov r6, r8
+	str r6, [r7]
+	bl csd_main
 
 	b loop
 
+loop2:
+	bl csd_main
+	b loop
 
 .data
 .align 4

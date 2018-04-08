@@ -13,3 +13,14 @@
 #define	UART_CHANNEL_STS_REG0_OFFSET	 0x2C
 #define	UART_TX_RX_FIFO0_OFFSET			 0x30
 #define	UART_BAUD_RATE_DIV_REG0_OFFSET   0x34
+
+
+#define uart_base						0xE0001000
+#define uart_Control_reg0				UART1_BASE
+#define uart_mode_reg0					UART1_BASE + 0x00000004
+#define uart_Baud_rate_gen_reg0			UART1_BASE + 0x00000018
+#define uart_Baud_rate_divider_reg0		UART1_BASE + 0x00000034
+#define uart_Modem_ctrl_reg0			UART1_BASE + 0x00000024
+#define uart_Modem_sts_reg0 			UART1_BASE + 0x00000028
+#define uart_TX_RX_FIFO0				UART1_BASE + 0x00000030
+#define uart_Channel_sts_reg0			UART1_BASE + 0x0000002C
