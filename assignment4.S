@@ -23,7 +23,7 @@ cydf_entry:
 csd_reset:
 
 main:
-	//uart_print // uart 프린트
+	uart_print // uart 프린트
 
 	//uart_init // uart 초기화
 
